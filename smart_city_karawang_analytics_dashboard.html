@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karawang Smart City Analytics Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        },
+                        dark: {
+                            900: '#0f172a',
+                            800: '#1e293b',
+                            700: '#334155',
+                            600: '#475569'
+                        },
+                        accent: {
+                            cyan: '#06b6d4',
+                            amber: '#f59e0b',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            purple: '#8b5cf6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card-light {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-full { width: 100% !important; margin: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Navigation Bar -->
+    <header class="no-print bg-slate-800/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-40 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <button id="sidebarToggle" class="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-200 md:hidden focus:outline-none">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+                    <i class="fas fa-city text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-white flex items-center gap-2">
+                        SMART CITY KARAWANG
+                        <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">v2.5 Live</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Dashboard Analitik Integrasi Karawang Maju & Cerdas</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Filters & Actions -->
+        <div class="flex items-center space-x-3">
+            <!-- Zone Filter -->
+            <div class="hidden sm:flex items-center space-x-2 bg-slate-900/80 border border-slate-700 rounded-lg px-3 py-1.5 text-xs">
+                <i class="fas fa-map-marker-alt text-emerald-400"></i>
+                <span class="text-slate-400">Wilayah:</span>
+                <select id="districtFilter" class="bg-transparent text-white font-medium focus:outline-none cursor-pointer">
+                    <option value="all" class="bg-slate-800 text-white">Semua Kecamatan (30)</option>
+                    <option value="karawang-barat" class="bg-slate-800 text-white">Karawang Barat</option>
+                    <option value="karawang-timur" class="bg-slate-800 text-white">Karawang Timur</option>
+                    <option value="klari" class="bg-slate-800 text-white">Klari</option>
+                    <option value="telukjambe-timur" class="bg-slate-800 text-white">Telukjambe Timur</option>
+                    <option value="cikampek" class="bg-slate-800 text-white">Cikampek</option>
+                    <option value="rengasdengklok" class="bg-slate-800 text-white">Rengasdengklok</option>
+                    <option value="ciampel" class="bg-slate-800 text-white">Ciampel</option>
+                    <option value="pedes" class="bg-slate-800 text-white">Pedes / Pakisjaya</option>
+                </select>
+            </div>
+
+            <!-- Export / Print -->
+            <button onclick="window.print()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs shadow-md transition">
+                <i class="fas fa-print"></i>
+                <span class="hidden md:inline">Cetak / Export PDF</span>
+            </button>
+
+            <!-- Theme Toggle -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-amber-400 transition" title="Ganti Mode Tampilan">
+                <i class="fas fa-sun text-lg" id="themeIcon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="no-print w-64 bg-slate-800/90 border-r border-slate-700/60 flex-shrink-0 flex flex-col justify-between transition-all duration-300 absolute md:relative z-30 h-full -translate-x-full md:translate-x-0">
+            <div class="p-4 space-y-6 overflow-y-auto">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3">Modul Utama</div>
+                <nav class="space-y-1">
+                    <button onclick="switchTab('overview')" class="nav-btn active w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-emerald-400 bg-emerald-500/10 border border-emerald-500/20" data-tab="overview">
+                        <i class="fas fa-th-large w-5 text-center"></i>
+                        <span>Ringkasan Utama</span>
+                    </button>
+                    <button onclick="switchTab('mobility')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="mobility">
+                        <i class="fas fa-road w-5 text-center text-cyan-400"></i>
+                        <span>Mobility & Infras</span>
+                    </button>
+                    <button onclick="switchTab('farming')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="farming">
+                        <i class="fas fa-seedling w-5 text-center text-emerald-400"></i>
+                        <span>Enviro & Farming</span>
+                    </button>
+                    <button onclick="switchTab('economy')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="economy">
+                        <i class="fas fa-industry w-5 text-center text-amber-400"></i>
+                        <span>Smart Factory & PAD</span>
+                    </button>
+                    <button onclick="switchTab('governance')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="governance">
+                        <i class="fas fa-heart-pulse w-5 text-center text-rose-400"></i>
+                        <span>Living & Governance</span>
+                    </button>
+                    <button onclick="switchTab('people')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="people">
+                        <i class="fas fa-wifi w-5 text-center text-purple-400"></i>
+                        <span>People & Connectivity</span>
+                    </button>
+                    <button onclick="switchTab('tourism')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-700/50 transition" data-tab="tourism">
+                        <i class="fas fa-utensils w-5 text-center text-amber-500"></i>
+                        <span>Smart Tourism</span>
+                    </button>
+                </nav>
+
+                <div class="pt-4 border-t border-slate-700/50">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">Filter Cepat District</div>
+                    <div class="px-3 space-y-2 text-xs">
+                        <label class="block text-slate-400">Pilih Tahun Analisis:</label>
+                        <select id="yearFilter" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200">
+                            <option value="2026" selected>2026 (Target Operasional)</option>
+                            <option value="2025">2025 (Evaluasi Akhir)</option>
+                            <option value="2024">2024 (Baseline)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-700/60 bg-slate-900/40">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                        KRW
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-white">Diskominfo Karawang</div>
+                        <div class="text-[10px] text-slate-400">Command Center v2.5</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Canvas -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-900/60" id="mainCanvas">
+
+            <!-- Dynamic Header Banner -->
+            <div class="mb-6 p-6 rounded-2xl bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 border border-slate-700/80 shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 id="tabTitle" class="text-2xl font-bold text-white flex items-center gap-2">
+                            Ringkasan Eksekutif Smart City Karawang
+                        </h2>
+                        <p id="tabSubtitle" class="text-slate-400 text-sm mt-1">
+                            Integrasi lintas pilar pembangunan: Infrastruktur Rekonstruksi Jalan, Industri 4.0, Ketahanan Pangan, dan Kesejahteraan Masyarakat.
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs bg-slate-900/80 p-3 rounded-xl border border-slate-700/60">
+                        <div class="text-center px-2">
+                            <span class="block text-slate-400">Indeks Smart City</span>
+                            <span class="text-lg font-bold text-emerald-400">84.2 / 100</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-700"></div>
+                        <div class="text-center px-2">
+                            <span class="block text-slate-400">Status Wilayah</span>
+                            <span class="text-lg font-bold text-cyan-400">Sangat Baik</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 1: OVERVIEW ================= -->
+            <div id="tab-overview" class="tab-content space-y-6">
+                <!-- Executive KPI Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-l-cyan-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase font-semibold">Rekonstruksi Jalan Paving -> Cor</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">142.5 Km</h3>
+                                <p class="text-xs text-emerald-400 mt-1"><i class="fas fa-arrow-up"></i> +38% dari 2024</p>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-cyan-500/10 text-cyan-400"><i class="fas fa-road text-xl"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-l-emerald-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase font-semibold">Produktivitas Padi Smart Farming</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">7.8 Ton/Ha</h3>
+                                <p class="text-xs text-emerald-400 mt-1"><i class="fas fa-arrow-up"></i> +1.2 Ton/Ha efisiensi</p>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400"><i class="fas fa-wheat-awn text-xl"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-l-amber-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase font-semibold">Kontribusi PAD Industri</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">Rp 2.85 Triliun</h3>
+                                <p class="text-xs text-emerald-400 mt-1"><i class="fas fa-arrow-up"></i> +14.2% YoY (Pabrik Cerdas)</p>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-amber-500/10 text-amber-400"><i class="fas fa-industry text-xl"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-l-rose-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400 uppercase font-semibold">Prevalensi Stunting</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">8.4%</h3>
+                                <p class="text-xs text-emerald-400 mt-1"><i class="fas fa-arrow-down"></i> Turun dari 14.2%</p>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-rose-500/10 text-rose-400"><i class="fas fa-child text-xl"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section Overview -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                                <i class="fas fa-chart-line text-emerald-400"></i> Progres Smart City Karawang Multi-Sektor (2022-2026)
+                            </h3>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="overviewTrendsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-cyan-400"></i> Evaluasi Keseimbangan Pilar Smart City
+                            </h3>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="overviewRadarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategic Summary Narrative -->
+                <div class="glass-card p-6 rounded-2xl">
+                    <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-bullseye text-amber-400"></i> Ringkasan Strategis Pemkab Karawang
+                    </h3>
+                    <p class="text-slate-300 text-sm leading-relaxed mb-4">
+                        Kabupaten Karawang berhasil menyinergikan peran historisnya sebagai <span class="text-emerald-400 font-semibold">Lumbung Padi Nasional</span> dan <span class="text-amber-400 font-semibold">Kawasan Industri Terbesar di Asia Tenggara</span>. Melalui program percepatan infrastruktur, jalan paving block berisiko tinggi di wilayah antar-kecamatan dan akses pabrik dialihkan secara bertahap menjadi jalan beton/aspal berkualitas tinggi. Transformasi ini mempercepat arus logistik, menurunkan beban stunting dengan keterhubungan Posyandu Digital, serta mengerek PAD daerah.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                            <div class="text-emerald-400 font-semibold mb-1"><i class="fas fa-check-circle"></i> Selesai Tepat Waktu</div>
+                            <p class="text-slate-400">120 KM Rekonstruksi jalan antar-desa ke pusat ekonomi kawasan industri.</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                            <div class="text-cyan-400 font-semibold mb-1"><i class="fas fa-wifi"></i> Penanganan Blankspot</div>
+                            <p class="text-slate-400">45 Desa terpencil di Karawang Selatan & Utara kini terkoneksi jaringan 4G/5G.</p>
+                        </div>
+                        <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                            <div class="text-amber-400 font-semibold mb-1"><i class="fas fa-coins"></i> Dampak Ekonomi</div>
+                            <p class="text-slate-400">Wisata kuliner (Soto Gempol & Sorabi) mengalami kenaikan transaksi 32% via QRIS.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 2: SMART MOBILITY & INFRASTRUCTURE ================= -->
+            <div id="tab-mobility" class="tab-content hidden space-y-6">
+                <!-- Dynamic Filter Bar for Mobility -->
+                <div class="glass-card p-4 rounded-xl flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-slate-400 font-medium">Filter Tipe Konstruksi:</span>
+                        <select id="roadTypeFilter" onchange="filterMobilityData()" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                            <option value="all">Semua Jenis Konstruksi</option>
+                            <option value="paving_to_cor">Konversi Paving Block ke Cor Beton</option>
+                            <option value="cor_to_aspal">Beton Lapis Aspal Hotmix</option>
+                        </select>
+                    </div>
+                    <div class="text-xs text-slate-400">
+                        Status Jalan Rusak Terperbaiki: <span class="text-emerald-400 font-bold">88.4%</span>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Paving Block Diubah (Cor/Aspal)</p>
+                        <h4 class="text-2xl font-bold text-white mt-1" id="kpiRoadKm">142.5 Km</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-layer-group"></i> Target 2026: 160 Km</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Penurunan Angka Kecelakaan Jalan</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">-42.8%</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-shield-alt"></i> Karena struktur jalan kokoh</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Perapihan Fasum (PJU & Drainase)</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">1,240 Titik</h4>
+                        <span class="text-[11px] text-amber-400"><i class="fas fa-lightbulb"></i> PJU Cerdas IoT Hemat Daya</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Indeks Kepuasan Pengguna Jalan</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">87.5 / 100</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-smile"></i> Survei Publik 2026</span>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Progres Rekonstruksi Jalan Paving ke Cor Beton per Kecamatan (Km)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="roadProgressChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Dampak Terhadap Penurunan Waktu Tempuh Logistik & Kemacetan (Menit)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="trafficImpactChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Table -->
+                <div class="glass-card p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-white text-sm">Status Proyek Fasilitas Publik & Perbaikan Jalan</h3>
+                        <input type="text" id="mobilitySearch" onkeyup="searchMobilityTable()" placeholder="Cari lokasi / kecamatan..." class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1 text-xs text-white focus:outline-none">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left text-slate-300">
+                            <thead class="bg-slate-800/80 text-slate-400 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3">Kecamatan / Lokasi</th>
+                                    <th class="p-3">Panjang Jalan (Km)</th>
+                                    <th class="p-3">Jenis Pekerjaan</th>
+                                    <th class="p-3">PJU & Drainase Terpasang</th>
+                                    <th class="p-3">Status Proyek</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mobilityTableBody" class="divide-y divide-slate-700/50">
+                                <tr>
+                                    <td class="p-3 font-medium text-white">Klari - Kosambi</td>
+                                    <td class="p-3">24.5 Km</td>
+                                    <td class="p-3">Paving Block -> Cor Beton 30cm</td>
+                                    <td class="p-3">210 Lampu PJU & Trotoar</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% Selesai</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium text-white">Rengasdengklok Utama</td>
+                                    <td class="p-3">18.2 Km</td>
+                                    <td class="p-3">Konversi Cor + Lapisan Aspal</td>
+                                    <td class="p-3">180 Lampu & Drainase Makro</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% Selesai</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium text-white">Telukjambe Timur (Akses KIIC)</td>
+                                    <td class="p-3">32.0 Km</td>
+                                    <td class="p-3">Pengecoran Jalan Berat Heavy Duty</td>
+                                    <td class="p-3">340 PJU IoT Smart Dimming</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">100% Selesai</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium text-white">Cikampek - Jatisari</td>
+                                    <td class="p-3">28.4 Km</td>
+                                    <td class="p-3">Rekonstruksi Paving & Halte Bus Cerdas</td>
+                                    <td class="p-3">250 PJU & Trotoar Disabilitas</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">85% On-Progress</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium text-white">Ciampel (Akses Surya Cipta)</td>
+                                    <td class="p-3">22.8 Km</td>
+                                    <td class="p-3">Pengecoran & Normalisasi Drainase</td>
+                                    <td class="p-3">190 Lampu & Sensor Genangan</td>
+                                    <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">90% On-Progress</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 3: SMART ENVIRONMENT & FARMING ================= -->
+            <div id="tab-farming" class="tab-content hidden space-y-6">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Produktivitas Padi (Lumbung Padi)</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">7.8 Ton/Ha</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-up"></i> Sensoring IoT Irigasi</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Efisiensi Air Irigasi Cerdas</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">34.2%</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-tint"></i> Pintu Air Automasi IoT</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Indeks Kualitas Udara (AQI)</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">52 (Baik)</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-leaf"></i> Sensor Udara Tersebar</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Sampah Organik Diolah</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">450 Ton/Hari</h4>
+                        <span class="text-[11px] text-amber-400"><i class="fas fa-recycle"></i> Converter Biogas & Kompos</span>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Hasil Panen Padi Sebelum vs Sesudah Penerapan Smart Farming (Ton/Ha)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="farmingYieldChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Pengelolaan Sampah & Reduksi Karbon Industri-Pertanian (Ribu Ton CO2e)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="wasteCarbonChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytical Feature -->
+                <div class="glass-card p-5 rounded-2xl flex flex-col md:flex-row items-center gap-6">
+                    <div class="w-full md:w-1/3 text-center p-4 bg-slate-800/80 rounded-xl border border-slate-700">
+                        <i class="fas fa-microchip text-4xl text-emerald-400 mb-2"></i>
+                        <h4 class="font-bold text-white text-base">IoT Agriculture Network</h4>
+                        <p class="text-xs text-slate-400 mt-1"> Terpasang 120 Sensor Kelembaban Tanah, pH, & Ketinggian Air di Sawah Karawang.</p>
+                    </div>
+                    <div class="w-full md:w-2/3 space-y-2 text-xs">
+                        <h4 class="font-bold text-slate-200 text-sm">Dampak Langsung bagi Petani Karawang:</h4>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-400 mt-0.5"></i>
+                            <p class="text-slate-300"><span class="font-semibold text-white">Prediksi Hama Presisi:</span> Notifikasi dini serangan hama wereng berbasis kelembaban udara melalui SMS/WA Bot Petani.</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-400 mt-0.5"></i>
+                            <p class="text-slate-300"><span class="font-semibold text-white">Otomatisasi Irigasi Citarum:</span> Pengaturan debit air pintar mencegah kekeringan di masa tanam gadu.</p>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-check text-emerald-400 mt-0.5"></i>
+                            <p class="text-slate-300"><span class="font-semibold text-white">Ekosistem Hijau Industri:</span> Residu jerami diproses pabrik menjadi pupuk organik terstandar.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 4: SMART ECONOMY / SMART FACTORY ================= -->
+            <div id="tab-economy" class="tab-content hidden space-y-6">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">PAD Sektor Industri & Pajak</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">Rp 2.85 Triliun</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-up"></i> +14.2% YoY</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Pabrik Cerdas Terintegrasi 4.0</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">184 Fabrik</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-microchip"></i> KIIC, Suryacipta, KIC</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Serapan Tenaga Kerja Lokal</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">74.6%</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-user-check"></i> Perda Ketenagakerjaan</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Indeks Efisiensi Manufaktur</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">91.2 / 100</h4>
+                        <span class="text-[11px] text-amber-400"><i class="fas fa-bolt"></i> Energi Green Industry</span>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Pertumbuhan Pendapatan Asli Daerah (PAD) Karawang (Miliar Rp)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="padGrowthChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Distribusi Penyerapan Tenaga Kerja per Kawasan Industri (%)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="laborDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 5: SMART LIVING & GOVERNANCE ================= -->
+            <div id="tab-governance" class="tab-content hidden space-y-6">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Prevalensi Stunting</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">8.4%</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-down"></i> Target Nasional &lt; 14%</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Angka Kemiskinan Ekstrem</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">1.1%</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-down"></i> Turun drastis dari 3.8%</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Posyandu Digital Aktif</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">892 Unit</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-laptop-medical"></i> Monitoring Realtime Gizi</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Ketepatansasuran Bansos</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">98.2%</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-id-card"></i> Verifikasi BiometrikNIK</span>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Tren Penurunan Stunting & Gizi Buruk Karawang (2022-2026)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="stuntingChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Cakupan Intervensi Gizi & Bantuan Sosial per Wilayah (%)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="socialInterventionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 6: SMART PEOPLE & CONNECTIVITY ================= -->
+            <div id="tab-people" class="tab-content hidden space-y-6">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Indeks Literasi Digital</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">78.6 / 100</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-up"></i> Kategori Tinggi</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Cakupan Internet Pedesaan</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">96.8%</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-signal"></i> Pengentasan Blankspot</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Masyarakat Terlatih Digital</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">42,500 Urg</h4>
+                        <span class="text-[11px] text-amber-400"><i class="fas fa-graduation-cap"></i> UMKM & Pemuda Desa</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Wi-Fi Publik Gratis (Fasum)</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">310 Titik</h4>
+                        <span class="text-[11px] text-purple-400"><i class="fas fa-wifi"></i> Taman, Halte, & Balai Desa</span>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Kemajuan Eliminasi Area Blankspot di Pedesaan Karawang
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="blankspotChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Peserta Pelatihan Digital UMKM & Literasi Komunitas
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="digitalTrainingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= TAB 7: SMART TOURISM ================= -->
+            <div id="tab-tourism" class="tab-content hidden space-y-6">
+                <!-- KPI Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Kunjungan Wisatawan / Tahun</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">2.45 Juta</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-arrow-up"></i> +28% YoY</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Omzet UMKM Kuliner Khas</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">Rp 185 Miliar</h4>
+                        <span class="text-[11px] text-amber-400"><i class="fas fa-utensils"></i> Soto Gempol, Serabi, dll</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Rating Kepuasan Wisata</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">4.7 / 5.0</h4>
+                        <span class="text-[11px] text-emerald-400"><i class="fas fa-star text-amber-400"></i> Apps Tourist Review</span>
+                    </div>
+                    <div class="glass-card p-4 rounded-xl">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Wisata Digital Adoption</p>
+                        <h4 class="text-2xl font-bold text-white mt-1">82%</h4>
+                        <span class="text-[11px] text-cyan-400"><i class="fas fa-qrcode"></i> Transaksi E-Ticketing/QRIS</span>
+                    </div>
+                </div>
+
+                <!-- Showcase Cards: Destinasi & Kuliner -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Destinasi Wisata Alam & Sejarah -->
+                    <div class="glass-card p-5 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i class="fas fa-mountain-sun text-emerald-400"></i> Destinasi Unggulan Karawang
+                        </h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition">
+                                <span class="font-bold text-white block">Candi Jiwa Batujaya</span>
+                                <span class="text-[10px] text-slate-400">Wisata Sejarah & Budaya</span>
+                                <div class="mt-2 text-amber-400 font-semibold"><i class="fas fa-star"></i> 4.8 (350k Vis)</div>
+                            </div>
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition">
+                                <span class="font-bold text-white block">Curug Cigentis</span>
+                                <span class="text-[10px] text-slate-400">Wisata Alam Pegunungan</span>
+                                <div class="mt-2 text-amber-400 font-semibold"><i class="fas fa-star"></i> 4.6 (420k Vis)</div>
+                            </div>
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 hover:border-emerald-500/50 transition">
+                                <span class="font-bold text-white block">Pantai Tanjung Pakis</span>
+                                <span class="text-[10px] text-slate-400">Wisata Bahari</span>
+                                <div class="mt-2 text-amber-400 font-semibold"><i class="fas fa-star"></i> 4.5 (510k Vis)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kuliner Khas -->
+                    <div class="glass-card p-5 rounded-2xl space-y-4">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i class="fas fa-bowl-food text-amber-400"></i> Wisata Kuliner Khas Karawang
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-amber-500/20 text-amber-400"><i class="fas fa-bowl-rice text-lg"></i></div>
+                                <div>
+                                    <div class="font-bold text-white">Soto Gempol</div>
+                                    <div class="text-[10px] text-slate-400">Legendaris sejak 1980</div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-emerald-500/20 text-emerald-400"><i class="fas fa-cookie text-lg"></i></div>
+                                <div>
+                                    <div class="font-bold text-white">Serabi Hijau</div>
+                                    <div class="text-[10px] text-slate-400">Daun Suji Alami & Kinca</div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-purple-500/20 text-purple-400"><i class="fas fa-ghost text-lg"></i></div>
+                                <div>
+                                    <div class="font-bold text-white">Sorabi Kuntilanak</div>
+                                    <div class="text-[10px] text-slate-400">Khas Rengasdengklok</div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-3">
+                                <div class="p-2 rounded-lg bg-cyan-500/20 text-cyan-400"><i class="fas fa-utensils text-lg"></i></div>
+                                <div>
+                                    <div class="font-bold text-white">Tahu Bumbu Karawang</div>
+                                    <div class="text-[10px] text-slate-400">Cita Rasa Gurih Manis</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Jumlah Kunjungan Wisatawan Domestik & Mancanegara (Ribu Orang)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="tourismVisitorChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-semibold text-slate-200 text-sm mb-4">
+                            Kontribusi Ekonomi Sektor Tourism ke UMKM Lokal (Miliar Rp)
+                        </h3>
+                        <div class="h-64">
+                            <canvas id="tourismEconomyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Store instances of Chart.js to destroy/re-render cleanly
+        const chartInstances = {};
+
+        // Sidebar Toggle Mobile
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Theme Toggle (Dark/Light visual mode styling adjustments)
+        let isDarkMode = true;
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            
+            if (!isDarkMode) {
+                html.classList.remove('dark');
+                document.body.classList.remove('bg-slate-900', 'text-slate-100');
+                document.body.classList.add('bg-slate-100', 'text-slate-800');
+                icon.classList.remove('fa-sun', 'text-amber-400');
+                icon.classList.add('fa-moon', 'text-slate-700');
+            } else {
+                html.classList.add('dark');
+                document.body.classList.remove('bg-slate-100', 'text-slate-800');
+                document.body.classList.add('bg-slate-900', 'text-slate-100');
+                icon.classList.remove('fa-moon', 'text-slate-700');
+                icon.classList.add('fa-sun', 'text-amber-400');
+            }
+        }
+
+        // Tab Switching Functionality
+        const tabTitles = {
+            overview: { title: "Ringkasan Eksekutif Smart City Karawang", subtitle: "Integrasi lintas pilar pembangunan: Infrastruktur Rekonstruksi Jalan, Industri 4.0, Ketahanan Pangan, dan Kesejahteraan Masyarakat." },
+            mobility: { title: "Smart Mobility & Infrastructure", subtitle: "Transformasi konstruksi jalan rusak dari Paving Block menjadi Jalan Cor Beton/Aspal serta perapihan PJU & Drainase Karawang." },
+            farming: { title: "Smart Environment & Smart Farming", subtitle: "Modernisasi Karawang sebagai Lumbung Padi Nasional berbasis Sensor IoT, efisiensi irigasi Citarum, & reduksi emisi." },
+            economy: { title: "Smart Economy & Smart Factory", subtitle: "Pengembangan Industri 4.0 di kawasan KIIC, Suryacipta, KIC untuk optimalisasi Pendapatan Asli Daerah (PAD) & Tenaga Kerja." },
+            governance: { title: "Smart Living & Governance", subtitle: "Intervensi terpadu penanganan stunting, kemiskinan ekstrem, dan digitalisasi Posyandu Karawang." },
+            people: { title: "Smart People & Connectivity", subtitle: "Pemerataan akses broadband internet 4G/5G pedesaan, penanganan area blankspot, & pelatihan literasi digital." },
+            tourism: { title: "Smart Tourism & Heritage", subtitle: "Promosi destinasi wisata alam Candi Jiwa/Curug Cigentis dan penguatan kuliner legendaris Karawang." }
+        };
+
+        function switchTab(tabId) {
+            // Update active state in nav
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-emerald-400', 'bg-emerald-500/10', 'border', 'border-emerald-500/20');
+                btn.classList.add('text-slate-300');
+            });
+
+            const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'text-emerald-400', 'bg-emerald-500/10', 'border', 'border-emerald-500/20');
+                activeBtn.classList.remove('text-slate-300');
+            }
+
+            // Hide all contents & Show active
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            // Update Header texts
+            if (tabTitles[tabId]) {
+                document.getElementById('tabTitle').textContent = tabTitles[tabId].title;
+                document.getElementById('tabSubtitle').textContent = tabTitles[tabId].subtitle;
+            }
+
+            // Trigger chart rendering for that tab
+            renderTabCharts(tabId);
+        }
+
+        // Search Filter for Mobility Table
+        function searchMobilityTable() {
+            const input = document.getElementById('mobilitySearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#mobilityTableBody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            });
+        }
+
+        // Interactive Filter Mock function for Mobility
+        function filterMobilityData() {
+            const val = document.getElementById('roadTypeFilter').value;
+            const kpiKm = document.getElementById('kpiRoadKm');
+            if (val === 'paving_to_cor') {
+                kpiKm.textContent = "112.0 Km";
+            } else if (val === 'cor_to_aspal') {
+                kpiKm.textContent = "30.5 Km";
+            } else {
+                kpiKm.textContent = "142.5 Km";
+            }
+        }
+
+        // Global Chart Defaults
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
+
+        function renderTabCharts(tabId) {
+            if (tabId === 'overview') {
+                createChart('overviewTrendsChart', 'line', {
+                    labels: ['2022', '2023', '2024', '2025', '2026 (Target)'],
+                    datasets: [
+                        { label: 'Jalan Beton Rekonstruksi (Km)', data: [20, 45, 80, 115, 142.5], borderColor: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)', fill: true, tension: 0.3 },
+                        { label: 'Produktivitas Padi (Ton/Ha)', data: [5.8, 6.2, 6.5, 7.2, 7.8], borderColor: '#10b981', backgroundColor: 'transparent', tension: 0.3 },
+                        { label: 'Penurunan Stunting (%)', data: [18.6, 15.2, 12.1, 9.8, 8.4], borderColor: '#f43f5e', backgroundColor: 'transparent', tension: 0.3 }
+                    ]
+                });
+
+                createChart('overviewRadarChart', 'radar', {
+                    labels: ['Mobility & Infra', 'Smart Farming', 'Smart Factory', 'Living & Health', 'Connectivity', 'Smart Tourism'],
+                    datasets: [{
+                        label: 'Skor Capaian Karawang 2026',
+                        data: [88, 92, 95, 84, 89, 82],
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderColor: '#10b981',
+                        pointBackgroundColor: '#10b981'
+                    }]
+                });
+            }
+
+            else if (tabId === 'mobility') {
+                createChart('roadProgressChart', 'bar', {
+                    labels: ['Klari', 'Rengasdengklok', 'Telukjambe E', 'Cikampek', 'Ciampel', 'Pedes'],
+                    datasets: [
+                        { label: 'Panjang Jalan Cor Beton (Km)', data: [24.5, 18.2, 32.0, 28.4, 22.8, 16.6], backgroundColor: '#06b6d4' },
+                        { label: 'Sisa Paving Block Belum Diubah (Km)', data: [3.2, 2.1, 1.5, 4.0, 2.8, 5.2], backgroundColor: '#475569' }
+                    ]
+                });
+
+                createChart('trafficImpactChart', 'line', {
+                    labels: ['Sebelum Rekonstruksi (2023)', 'Progres 50% (2024)', 'Pascabetonisasi (2025)', 'Kondisi Cerdas (2026)'],
+                    datasets: [
+                        { label: 'Waktu Tempuh Logistik Industri (Menit)', data: [85, 65, 45, 32], borderColor: '#f59e0b', tension: 0.3 },
+                        { label: 'Tingkat Kemacetan Koridor Utama (%)', data: [68, 52, 38, 22], borderColor: '#8b5cf6', tension: 0.3 }
+                    ]
+                });
+            }
+
+            else if (tabId === 'farming') {
+                createChart('farmingYieldChart', 'bar', {
+                    labels: ['Kec. Rawamerta', 'Kec. Kutawaluya', 'Kec. Lemahabang', 'Kec. Cibuaya', 'Kec. Tempuran'],
+                    datasets: [
+                        { label: 'Konvensional (Ton/Ha)', data: [5.5, 5.8, 5.4, 5.2, 5.6], backgroundColor: '#64748b' },
+                        { label: 'Smart Farming IoT (Ton/Ha)', data: [7.8, 8.1, 7.6, 7.4, 7.9], backgroundColor: '#10b981' }
+                    ]
+                });
+
+                createChart('wasteCarbonChart', 'doughnut', {
+                    labels: ['Didaur Ulang Kompos', 'Konversi Biogas', 'Bank Sampah Digital', 'Residu TPA Jalupang'],
+                    datasets: [{
+                        data: [40, 25, 20, 15],
+                        backgroundColor: ['#10b981', '#06b6d4', '#f59e0b', '#f43f5e']
+                    }]
+                });
+            }
+
+            else if (tabId === 'economy') {
+                createChart('padGrowthChart', 'line', {
+                    labels: ['2022', '2023', '2024', '2025', '2026'],
+                    datasets: [{
+                        label: 'PAD Sektor Industri Manufaktur (Triliun Rp)',
+                        data: [1.9, 2.15, 2.4, 2.62, 2.85],
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                });
+
+                createChart('laborDistributionChart', 'pie', {
+                    labels: ['Kawasan KIIC', 'Suryacipta City', 'Karawang Inti City (KIC)', 'Kawasan Pertiwi/Lainnya'],
+                    datasets: [{
+                        data: [38, 28, 20, 14],
+                        backgroundColor: ['#10b981', '#06b6d4', '#8b5cf6', '#f59e0b']
+                    }]
+                });
+            }
+
+            else if (tabId === 'governance') {
+                createChart('stuntingChart', 'line', {
+                    labels: ['2022', '2023', '2024', '2025', '2026'],
+                    datasets: [
+                        { label: 'Prevalensi Stunting (%)', data: [18.6, 15.2, 12.1, 9.8, 8.4], borderColor: '#f43f5e', tension: 0.3 },
+                        { label: 'Kasus Gizi Buruk (Per 1000 Balita)', data: [8.2, 6.1, 4.3, 2.8, 1.5], borderColor: '#f59e0b', tension: 0.3 }
+                    ]
+                });
+
+                createChart('socialInterventionChart', 'bar', {
+                    labels: ['Penyaluran PMT Balita', 'Pendampingan Posyandu Digital', 'PKH & Bansos Tepat Sasaran', 'Sanitasi Air Bersih Desa'],
+                    datasets: [{
+                        label: 'Cakupan Intervensi Terintegrasi (%)',
+                        data: [96.5, 92.0, 98.2, 89.4],
+                        backgroundColor: '#10b981'
+                    }]
+                });
+            }
+
+            else if (tabId === 'people') {
+                createChart('blankspotChart', 'bar', {
+                    labels: ['Karawang Selatan (Tegalwaru/Pacing)', 'Karawang Utara (Pakisjaya)', 'Pesisir Cibuaya', 'Area Perbatasan Purwakarta'],
+                    datasets: [
+                        { label: 'Sisa Area Blankspot 2024 (%)', data: [35, 28, 22, 18], backgroundColor: '#f43f5e' },
+                        { label: 'Cakupan Internet 4G/5G 2026 (%)', data: [95, 98, 96, 94], backgroundColor: '#06b6d4' }
+                    ]
+                });
+
+                createChart('digitalTrainingChart', 'line', {
+                    labels: ['2022', '2023', '2024', '2025', '2026'],
+                    datasets: [{
+                        label: 'Jumlah Peserta Pelatihan UMKM Digital',
+                        data: [5000, 12000, 22000, 33000, 42500],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                });
+            }
+
+            else if (tabId === 'tourism') {
+                createChart('tourismVisitorChart', 'bar', {
+                    labels: ['2022', '2023', '2024', '2025', '2026 (Est)'],
+                    datasets: [
+                        { label: 'Wisatawan Domestik (Ribu)', data: [1200, 1550, 1890, 2150, 2380], backgroundColor: '#10b981' },
+                        { label: 'Wisatawan Mancanegara (Ribu)', data: [15, 22, 38, 52, 70], backgroundColor: '#f59e0b' }
+                    ]
+                });
+
+                createChart('tourismEconomyChart', 'line', {
+                    labels: ['Soto Gempol', 'Serabi Hijau', 'Sorabi Kuntilanak', 'Tahu Bumbu', 'Oleh-oleh Kerajinan'],
+                    datasets: [{
+                        label: 'Omzet Penjualan Tahunan UMKM (Miliar Rp)',
+                        data: [42, 38, 28, 24, 53],
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                });
+            }
+        }
+
+        // Generic Helper for Creating Chart.js instance safely
+        function createChart(canvasId, type, data) {
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+
+            chartInstances[canvasId] = new Chart(ctx, {
+                type: type,
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8',
+                                font: { size: 11 }
+                            }
+                        }
+                    },
+                    scales: type === 'radar' || type === 'pie' || type === 'doughnut' ? {} : {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize dashboard on load
+        window.onload = function() {
+            switchTab('overview');
+        };
+    </script>
+</body>
+</html>
